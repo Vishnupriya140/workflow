@@ -1,0 +1,123 @@
+spring:
+  data:
+    mongodb:
+      uri: mongodb://admin:fj}W7lEv&K*r@172.27.40.72:27020/admin?ssl=false
+      database: workflowScheduler
+  rabbitmq:
+    ssl:
+      enabled: false
+      algorithm: TLSv1.2
+    host: 172.27.26.252
+    port: 5672
+    username: 302ServiceUser
+    password: aim12345
+    virtual-host: dev
+  cloud:
+    stream:
+      default:
+        contentType: text/plain
+      bindings:
+        river-case-output:
+          destination: aim.river
+          contentType: application/json
+          binder: rabbit
+        stream-case-output:
+          destination: aim.stream
+          contentType: application/json
+          binder: rabbit
+        trickle-case-output:
+          destination: aim.trickle
+          contentType: application/json
+          binder: rabbit
+      rabbit:
+        bindings:
+          river-case-output:
+            producer:
+              declareExchange: false
+              routing-key-expression: "headers.customRoutingKey"
+          stream-case-output:
+            producer:
+              declareExchange: false
+              routing-key-expression: "headers.customRoutingKey"
+          trickle-case-output:
+            producer:
+              declareExchange: false
+              routing-key-expression: "headers.customRoutingKey"
+
+server:
+  port: 8080
+
+
+application:
+  name: workflow-scheduler
+  description: workflow Scheduler schedules job and publishes events
+
+
+async-config:
+  producer:
+    thread-timeout: 60
+    thread-core-pool-size: 10
+    thread-max-pool-size: 25
+    queue-capacity: 25
+
+#Health check endpoint configuration
+management:
+  endpoint:
+    health:
+      show-details: "ALWAYS"
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+      base-path: /
+  info:
+    git:
+      mode: full
+
+# Logging level. Which type(level) of logs are going to be logged.
+logging:
+  level:
+    org: ERROR
+    com: ERROR
+    com.aim.rabbitmqlib: INFO
+    com.aim.scheduler: INFO
+    com.aim.servicelog: INFO
+    springfox.documentation: ERROR
+
+
+# Configuration which allows `retry by publish` functionality
+rabbitmq:
+  connect: true
+  admin:
+    credentials:
+      username: admin
+      password: admin
+  producer:
+    retry:
+      enabled: true
+      initial-interval: 1000
+      max-attempts: 3
+      multiplier: 1.5
+      max-interval: 20000
+
+
+org:
+  quartz:
+    jobStore:
+      class: com.novemberain.quartz.mongodb.MongoDBJobStore
+      mongoUri: "mongodb://admin:fj}W7lEv&K*r@172.27.40.72:27020/admin?ssl=false"
+      dbName: workflowScheduler
+      collectionPrefix: job_
+      isClustered: true
+    scheduler:
+      skipUpdateCheck: true
+      instanceId: AUTO
+      instanceName: scheduler
+      collectionPrefix: job_
+      clusterCheckinInterval: 60000
+      triggerTimeoutMillis: 1200000
+      jobTimeoutMillis: 1200000
+      isfireThreshold: 10000
+      mongoOptionWriteConcernTimeoutMillis: 10000
+#    threadPool:
+#      threadCount: 10
